@@ -1,0 +1,14 @@
+[
+  {
+    "name": "default",
+    "type": "postgres",
+    "host": "localhost",
+    "port": 5432,
+    "username": "postgres",
+    "password": "desenv",
+    "database": "idehco3",
+    "schema": "bcim",
+    "synchronize": false,
+    "entities": ["entities/*.js"]
+  }
+]
