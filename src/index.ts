@@ -8,8 +8,9 @@ const port = process.env.PORT || 3000
 const protoc_host_baseUrl = protocol + "://" + (process.env.server ||"localhost") + `:${port}`
 console.log("Trying Database conection ...")
 createConnection().then(async connection => {
-  console.log("Database conection created")
+  console.log("Database conection created.")
   //app.use('', require("./router/router_entities"))
+  console.log("Creating router...")
   app.use('', require("./router/routerEntity"))
   console.log(`On browser: ${protoc_host_baseUrl}/api`)
   app.listen(port,()=>console.log(`Server on port: ${port}`))
