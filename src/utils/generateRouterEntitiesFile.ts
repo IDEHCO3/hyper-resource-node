@@ -1,4 +1,4 @@
-const entityFolder = './src/entity'
+const entityFolder = './src/entity/entities/'
 const routerEntity = './src/router/routerEntity.ts'
 const import_file_dir = './../resource' 
 const f_s = require('fs');
