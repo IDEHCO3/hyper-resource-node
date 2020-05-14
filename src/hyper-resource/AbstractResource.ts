@@ -18,9 +18,41 @@ export abstract class AbstractResource {
         this.context = new ContextResource()
     }
     public abstract entityClass() : any 
-    protected attributeNames() : object{  
+    public attributeNames() : object{  
         return connection.getRepository(this.entityClass()).metadata.propertiesMap
-    }    
+    }  
+    public primaryKeyName() : string | undefined {
+        const primaryKeys = connection.getRepository(this.entityClass()).metadata.primaryColumns
+        if(primaryKeys.length==0)
+            return null
+        return primaryKeys[0].propertyName
+    }
+    public async post(attributeNameValueJsonObject) {
+        let repository = connection.getRepository(this.entityClass())
+        const entity = await repository.save(attributeNameValueJsonObject)
+        return this.response.status(201).json(entity[this.primaryKeyName()])
+    }
+    public async delete() {
+        let whereStr =  `${this.primaryKeyName()} = :${this.primaryKeyName()}`
+        let whereParam = {[this.primaryKeyName()]: this.request.params['id']}
+        const res = await connection
+                        .createQueryBuilder()
+                        .delete()
+                        .from(this.entityClass())
+                        .where(whereStr, whereParam)
+                        .execute()
+        return this.response.status(200).json(1)
+    }
+    public async put(attributeNameValueJsonObject) {
+        let res = await connection
+                        .createQueryBuilder()
+                        .update(this.entityClass())
+                        .set(attributeNameValueJsonObject)
+                        .where(`${this.primaryKeyName()} = :${this.primaryKeyName()}`, { [this.primaryKeyName()]: this.request.params['id'] })
+                        .execute()
+        return this.response.status(200).json(1)
+    }
+
     protected  mapNameToOperation() : object {
         return {'projection': this.projection}
     }
@@ -68,12 +100,16 @@ export abstract class AbstractResource {
                this.request.headers.accept === 'application/geojson' 
     }
     public async  getRepresentation() {
-        
-        const entity  = await connection.manager.findOne(this.entityClass())
+        let entity = null
+        if(Object.keys(this.request.params).find(key=> key === 'id'))
+            entity =  await connection.getRepository(this.entityClass()).findOne({[this.primaryKeyName()]: this.request.params['id']})
+        else
+            entity = await connection.getRepository(this.entityClass()).findOne(this.request.params)
 
         return this.isJsonRequested() ? this.response.json(entity): this.response.json(entity)
     }
     public async getRepresentationGivenParameters() {
+        console.log(this.request.params)        
         const entity  = await connection.manager.findOne(this.entityClass())
         return this.isJsonRequested() ? this.response.json(entity): this.response.json(entity)
     }

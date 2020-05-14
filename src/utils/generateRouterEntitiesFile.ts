@@ -70,7 +70,7 @@ async function imports_resource(files: Array<String>, wstream) {
 }
 
 // PROGRAM STARTS HERE
-export function generateRouterEntitiesFile() {
+export function generateRouterEntitiesFile(hasPost=false, hasPut=false, hasDelete=false) {
     console.log("Gerando routers ...")
     f_s.readdir(entityFolder, async (err, files : Array<String>) => {
     files = files.filter(file_name => file_name.search(".ts") > 0 )  
@@ -90,10 +90,17 @@ export function generateRouterEntitiesFile() {
         write_router_resource(wstream, file_name, '/*' ) 
         write_router_collection_resource(wstream, file_name)
         write_router_collection_resource(wstream, file_name, '*')
+        
+        write_router_resource(wstream, file_name, '', 'head')
+        write_router_resource(wstream, file_name, '/*', 'head') 
+        write_router_collection_resource(wstream, file_name,'' ,'head')
+        write_router_collection_resource(wstream, file_name, '*', 'head')
+
         write_router_resource(wstream, file_name, '', 'options')
         write_router_resource(wstream, file_name, '/*', 'options') 
         write_router_collection_resource(wstream, file_name,'' ,'options')
         write_router_collection_resource(wstream, file_name, '*', 'options')
+
     })
     wstream.write(`module.exports = router`)
     wstream.end()

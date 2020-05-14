@@ -1,4 +1,5 @@
 //npx typeorm-model-generator -h localhost -d idehco3 -u postgres -x desenv -e postgres -o . -s bcim 
+//npx typeorm-model-generator -h localhost -d postgres -u postgres -x desenv -e postgres -p 5433 -o ./src/entity -s bcim
 import "reflect-metadata";
 import {createConnection} from "typeorm";
 const express = require('express')
@@ -9,7 +10,6 @@ const protoc_host_baseUrl = protocol + "://" + (process.env.server ||"localhost"
 console.log("Trying Database conection ...")
 createConnection().then(async connection => {
   console.log("Database conection created.")
-  //app.use('', require("./router/router_entities"))
   console.log("Creating router...")
   app.use('', require("./router/routerEntity"))
   console.log(`On browser: ${protoc_host_baseUrl}/api`)
