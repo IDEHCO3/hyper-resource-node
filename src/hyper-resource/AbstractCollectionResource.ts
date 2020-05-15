@@ -41,6 +41,12 @@ export abstract class AbstractCollectionResource extends AbstractResource {
         
         
     }
+    public async delete() {
+        return this.response.status(400).json("Collection does not support delete yet.")
+    }
+    public async put(attributeNameValueJsonObject) {
+        return this.response.status(400).json("Collection does not support put")
+    }
     @Type(Function)
     @ParamTypes(String)
     @ReturnType(Array)

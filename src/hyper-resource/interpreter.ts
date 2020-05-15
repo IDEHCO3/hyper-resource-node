@@ -95,11 +95,5 @@ export function pathSplittedBySlash(pathFromURL : string) : string[] {
     }   
     return pathFromURL.split('/')
 }
-//reference - Engineering a Compiler => Keith D. Cooper e Linda Torczon
-//scanner reads an input stream and produces an output stream that contains words, each labelled with its syntactic category
-// syntactic category - a classification of words according to their grammatical usage
-export function scanner(sequence: string ) {}
-// a function that identifies specific words in a stream of characters
-export function recognizer(sequence : String) {}
-export function lookup() {}
+
 

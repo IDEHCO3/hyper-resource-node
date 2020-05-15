@@ -27,32 +27,7 @@ export abstract class AbstractResource {
             return null
         return primaryKeys[0].propertyName
     }
-    public async post(attributeNameValueJsonObject) {
-        let repository = connection.getRepository(this.entityClass())
-        const entity = await repository.save(attributeNameValueJsonObject)
-        return this.response.status(201).json(entity[this.primaryKeyName()])
-    }
-    public async delete() {
-        let whereStr =  `${this.primaryKeyName()} = :${this.primaryKeyName()}`
-        let whereParam = {[this.primaryKeyName()]: this.request.params['id']}
-        const res = await connection
-                        .createQueryBuilder()
-                        .delete()
-                        .from(this.entityClass())
-                        .where(whereStr, whereParam)
-                        .execute()
-        return this.response.status(200).json(1)
-    }
-    public async put(attributeNameValueJsonObject) {
-        let res = await connection
-                        .createQueryBuilder()
-                        .update(this.entityClass())
-                        .set(attributeNameValueJsonObject)
-                        .where(`${this.primaryKeyName()} = :${this.primaryKeyName()}`, { [this.primaryKeyName()]: this.request.params['id'] })
-                        .execute()
-        return this.response.status(200).json(1)
-    }
-
+    
     protected  mapNameToOperation() : object {
         return {'projection': this.projection}
     }
@@ -113,11 +88,45 @@ export abstract class AbstractResource {
         const entity  = await connection.manager.findOne(this.entityClass())
         return this.isJsonRequested() ? this.response.json(entity): this.response.json(entity)
     }
-    public async options() {
+    public async head() {
+        return this.response.status(501).json("Method HEAD not implemented yet.")
+    }
+    public async headGivenParameters() {
+        return this.response.status(501).json("Method HEAD not implemented yet.")
+    }
+    public async patch() {
+        return this.response.status(501).json("Method PATCH not implemented yet.")
+    }
+     public async options() {
         return this.response.json(this.context.contextResource())
     }
     public async optionsGivenParameters() {
         return 
+    }
+    public async post(attributeNameValueJsonObject) {
+        let repository = connection.getRepository(this.entityClass())
+        const entity = await repository.save(attributeNameValueJsonObject)
+        return this.response.status(201).json(entity[this.primaryKeyName()])
+    }
+    public async delete() {
+        let whereStr =  `${this.primaryKeyName()} = :${this.primaryKeyName()}`
+        let whereParam = {[this.primaryKeyName()]: this.request.params['id']}
+        const res = await connection
+                        .createQueryBuilder()
+                        .delete()
+                        .from(this.entityClass())
+                        .where(whereStr, whereParam)
+                        .execute()
+        return this.response.status(200).json(1)
+    }
+    public async put(attributeNameValueJsonObject) {
+        let res = await connection
+                        .createQueryBuilder()
+                        .update(this.entityClass())
+                        .set(attributeNameValueJsonObject)
+                        .where(`${this.primaryKeyName()} = :${this.primaryKeyName()}`, { [this.primaryKeyName()]: this.request.params['id'] })
+                        .execute()
+        return this.response.status(200).json(1)
     }
     
 
