@@ -1,4 +1,3 @@
-import { Series, DataFrame } from 'pandas-js';
 const ATTRIBUTES = [ // TODO: replace with real class
     "id", "name", "birthDate"
 ]
@@ -17,6 +16,10 @@ const STATE_TABLE = {
 }
 const FINAL_STATES = [3]
 
+const AND_OPERATOR = "and"
+const OR_OPERATOR = "or"
+const BETWEEN = "between"
+
 function isReservedKeyword(wordToCheck) {
     var reservedWord = false;
     if (/^[a-z]+$/.test(wordToCheck)) {
@@ -29,38 +32,35 @@ function isReservedKeyword(wordToCheck) {
     return reservedWord;
 }
 
-function getNextState(currentInput, state) {
+function getInputCategory(input) {
+    /*
+    following the convension that attributes named
+    'and', 'or', 'between' or some comparison operators is not valid
 
-    switch(state) {
-        case 0:
-            
-            break;
-        case 1:            
-            break;
-        case 2:            
-            break;
-        case 3:            
-            break;
-        case 4:            
-            break;
-        case 5:            
-            break;
-        case 6:            
-            break;
-
+    this function is a scanner equivalent
+    */
+    if(ATTRIBUTES.includes(input)) {
+        return "attribute"
+    } else if (COMPARISON_OPERATORS.includes(input)) {
+        return "comparison_operator"
+    } else if (input === AND_OPERATOR) {
+        return "and"
+    } else if (input === OR_OPERATOR) {
+        return "or"
+    } else if (input === BETWEEN) {
+        return "between"
+    } else {
+        return "value"
     }
+}
 
-    // STATE_TABLE.attribute[state]
-    // STATE_TABLE.comparison_operator[state]
-    // STATE_TABLE.value[state]
-    // STATE_TABLE.and[state]
-    // STATE_TABLE.or[state]
-    // STATE_TABLE.between[state]
+function getNextState(currentInput, state) {
+    let category = getInputCategory(currentInput)
+    return STATE_TABLE[category][state]
 }
 
 function runParser(inputArray, state) {
-    let currentInput = inputArray[0]
-    
+    let currentInput = inputArray[0]    
 
     if( isReservedKeyword(currentInput) ) {
         console.error("Error: '" + currentInput + "' is a reserved keyword")
@@ -72,14 +72,17 @@ function runParser(inputArray, state) {
     }
 
     if(!FINAL_STATES.includes(state) && inputArray.length === 0) {
-        console.error("SyntaxError: operation inclopete")
+        console.error("SyntaxError: operation incoplete")
         return false
-
     }
 
     let nextState = getNextState(currentInput, state);
-    snippets.splice(0, 1)
-    runParser(snippets, nextState)    
+    if(nextState === null) {
+        console.error("SyntaxError: error found next '"+currentInput+"' token")
+        return false
+    }
+    inputArray.splice(0, 1)
+    return runParser(inputArray, nextState)    
 }
 
 function analyse(url) {
