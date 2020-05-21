@@ -9,7 +9,7 @@ const COMPARISON_OPERATORS = [
 const STATE_TABLE = {
     attribute:           [1,    null,   null,   null,   null,   null,   null],
     comparison_operator: [null, 2,      null,   null,   null,   null,   null],
-    value:               [null, null,   3,      null,   5,      null,   3],
+    value:               [null, null,   3,      null,   5,      null,   3], // if a token could be a <value> this path must be unique
     and:                 [null, null,   null,   1,      null,   6,      null],
     or:                  [null, null,   null,   1,      null,   null,   null],
     between:             [null, 4,      null,   null,   null,   null,   null]
