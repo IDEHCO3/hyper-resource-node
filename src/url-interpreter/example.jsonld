@@ -1,0 +1,17 @@
+{
+    "@context": {
+        "hydra": "https://www.w3.org/ns/hydra/core#",
+        "schema": "http://schema.org/"
+    },
+    "@type": "IriTemplate",
+    "template": "http://api.example.com/filter/geom/contains/'{?q}'",
+    "variableRepresentation": "hydra:ExplicitRepresentation",
+    "mapping": [
+      {
+        "@type": "hydra:IriTemplateMapping",
+        "hydra:variable": "q",
+        "hydra:property": "https://schema.org/URL",
+        "hydra:required": false
+      }
+    ]
+}
