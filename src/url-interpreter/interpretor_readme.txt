@@ -49,3 +49,9 @@ Using hydra iriTemplates with the concept of filter microexpressions the server 
 where to insert the parentesis?
 using the boolean operators ('and', 'or' and 'not') as microexpression separators
 with this approach could be possible to map all the valid parentesis locations
+
+
+Nasted URLs
+A nasted URL only appears as <value> (considering the state machine of the URL interpreter)
+After <value> the state machine could stop or read the "and" or "or" tokens.
+This could be o cut point to determinate the end of the url and the continuation of the expression
