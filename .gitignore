@@ -4,9 +4,10 @@ node_modules/
 build/
 src/db
 logs/**/*.log 
-src/router/**/*.ts
-src/resource/**/*.ts
-src/entity/**/*.ts
+src/router/*/*/*.ts
+src/resource/*/*/*.ts
+src/entity/*/*/*.ts
+src/context/*/*/*.ts
 config/
 tmp/
 temp/
