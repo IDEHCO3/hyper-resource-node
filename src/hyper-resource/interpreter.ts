@@ -48,9 +48,9 @@ export class Describer {
   }
 }
 /*
-
+filter -> expr |
 operation(filter)-> filter/(expr)
-exp-> exp1 | exp2 | e
+expr-> exp1 | exp2 | e
 exp1 -> operand1 operator operand2 | operand1 operator | operand2 operator | operand1 | operand2 | 
         operand1 operation operator operand2 |
 

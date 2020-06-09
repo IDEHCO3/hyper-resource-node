@@ -12,10 +12,8 @@ export abstract class AbstractCollectionResource extends AbstractResource {
         return params_url.split("/")[0]
     }
     protected responseForOperation(operationName : string, pathParameterFromUrl : string) {
-
     }
     protected async getFromProjection(attributeNames : string[]) {
-        console.log("AbstractCollection>>getFromProjection")
         return await connection.getRepository(this.entityClass()).createQueryBuilder(this.entityClass().name.toLowerCase()).select(attributeNames).getRawMany()
     }
     async getRepresentation() {
@@ -25,17 +23,14 @@ export abstract class AbstractCollectionResource extends AbstractResource {
         return await this.isJsonRequested() ? this.response.json(entities): this.response.json(entities)
     }
     async getRepresentationGivenParameters() {
-        console.log("getRepresentationGivenParameters")
         if (!this.request.params)
             return this.getRepresentation() 
         const operationNameOrAtributeNames = this.request.params['0'].split('/')[0].trim().toLowerCase()
         
         if (this.hasOperation(operationNameOrAtributeNames)) {
-            console.log("Tem a função: ", operationNameOrAtributeNames)
             const entities =  await connection.getRepository(this.entityClass()).find()
             return await this.isJsonRequested() ? this.response.json(entities): this.response.json(entities)
-        } else {
-            console.log("AbstractCollection>>NAO é funcao")
+        } else {//Is not a public operation to be called out"
             return await this.projection(operationNameOrAtributeNames)
         }
         

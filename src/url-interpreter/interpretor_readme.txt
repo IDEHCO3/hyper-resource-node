@@ -41,6 +41,7 @@ https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_decodeuricomponent
 filter microexpression
 The minimal expression capable of generate a valid 'filter' expression
 Example
+<attribute>/isNull
 <attribute>/eq/<values> is a minimal valid expression. If any of tokens are removed this is not a valid 'filter' expression anymore
 <attribute>/eq/<values>/and/<atribute>/gt/<value>. Although this represent a valid 'filter' expression, this is not minimal. The snippet and/<atribute>/gt/<value> can ben removed and this still a valid 'filter' expression
 

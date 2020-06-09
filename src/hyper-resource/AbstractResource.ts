@@ -18,8 +18,11 @@ export abstract class AbstractResource {
         this.context = new ContextResource()
     }
     public abstract entityClass() : any 
-    public attributeNames() : object{  
-        return connection.getRepository(this.entityClass()).metadata.propertiesMap
+    public attributeNames() : object {  
+        const res =   connection.getRepository(this.entityClass()).metadata.propertiesMap
+        console.log(res)
+        return res
+        return //connection.getRepository(this.entityClass()).metadata.propertiesMap
     }  
     public primaryKeyName() : string | undefined {
         const primaryKeys = connection.getRepository(this.entityClass()).metadata.primaryColumns
@@ -41,20 +44,22 @@ export abstract class AbstractResource {
         return !!this.mapNameToOperation()[operationName]
     }
     protected async getFromProjection(attributeNames : string[]) {
-        return await connection.getRepository(this.entityClass()).createQueryBuilder(this.entityClass().name.toLowerCase()).select(attributeNames).getRawOne()
+        return await connection.getRepository(this.entityClass())
+            .createQueryBuilder(this.entityClass().name.toLowerCase())
+            .where(this.getParameterValueToFindOne())
+            .select(attributeNames).getRawOne()
     }
     protected areAttributeNames(commaListString : string) { 
+        /* commaListString is a string of attribute names separated by comma */
         let arr_attribute_names = commaListString.toLowerCase().trim().split(',') 
         const objAtributeNames = this.attributeNames()
         let cont = 1
         for (const atName of arr_attribute_names) {
             if (objAtributeNames[atName] === undefined) {
-                console.log("Entrei no falso")
                 return false
             }
         }
-        console.log("Entrei no falso MAS nao sai")
-         return true 
+        return true 
     }
     @Type(Function)
     @ParamTypes(String)
@@ -74,19 +79,28 @@ export abstract class AbstractResource {
                this.request.headers.accept === 'application/geo+json' ||
                this.request.headers.accept === 'application/geojson' 
     }
+    protected getParameterValueToFindOne() {
+        if(Object.keys(this.request.params).find(key=> key === 'id'))
+            return {[this.primaryKeyName()]: this.request.params['id']}
+        else
+            this.request.params
+    }
     public async  getRepresentation() {
         let entity = null
-        if(Object.keys(this.request.params).find(key=> key === 'id'))
-            entity =  await connection.getRepository(this.entityClass()).findOne({[this.primaryKeyName()]: this.request.params['id']})
-        else
-            entity = await connection.getRepository(this.entityClass()).findOne(this.request.params)
-
+        entity = await connection.getRepository(this.entityClass()).findOne(this.getParameterValueToFindOne())
         return this.isJsonRequested() ? this.response.json(entity): this.response.json(entity)
     }
     public async getRepresentationGivenParameters() {
-        console.log(this.request.params)        
-        const entity  = await connection.manager.findOne(this.entityClass())
-        return this.isJsonRequested() ? this.response.json(entity): this.response.json(entity)
+        if (!this.request.params)
+            return this.getRepresentation() 
+        const operationNameOrAtributeNames = this.request.params['0'].split('/')[0].trim().toLowerCase()
+        
+        if (this.hasOperation(operationNameOrAtributeNames)) {
+            const entities =  await connection.getRepository(this.entityClass()).findOne(this.getParameterValueToFindOne())
+            return await this.isJsonRequested() ? this.response.json(entities): this.response.json(entities)
+        } else {//Is not a public operation to be called out"
+            return await this.projection(operationNameOrAtributeNames)
+        }
     }
     public async head() {
         return this.response.status(501).json("Method HEAD not implemented yet.")
@@ -128,9 +142,4 @@ export abstract class AbstractResource {
                         .execute()
         return this.response.status(200).json(1)
     }
-    
-
-        
-    
-    
 }   

@@ -2,5 +2,9 @@
 .vscode/
 node_modules/
 build/
+router/*.ts
+resource/*.ts
+entity/*.ts
+entity/entities/*.ts
 tmp/
 temp/

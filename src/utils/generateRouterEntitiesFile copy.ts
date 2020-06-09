@@ -11,7 +11,7 @@ console.log("Dir: ",__dirname)
 const fs = require('fs');
 const protocol = process.env.PROTOCOL || 'http'
 const port = process.env.PORT || 3000
-const protoc_host_baseUrl = protocol + "://" + (process.env.server ||"localhost") + `:${port}`
+const protoc_host_baseUrl = protocol + "://" + (process.env.SERVER ||"localhost") +':' + `:${port}`
 const api = "/api/"
 async function writeEntryPoint(protoc_host_baseUrl, files_name, wstream) {
     let snippets = files_name.map(file_name=>{ 

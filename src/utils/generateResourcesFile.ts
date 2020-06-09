@@ -26,6 +26,7 @@ export async function generateResourceEntityFiles(resource_class_dir = './src/re
             wstream1.write(`        return ${file}\n`)
             wstream1.write(`    }\n`)
             wstream1.write(`}\n\n`)
+            wstream1.write(`module.exports={${file}Resource, ${file}CollectionResource }`)
             wstream1.end()        
         })
     })
