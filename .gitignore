@@ -2,10 +2,11 @@
 .vscode/
 node_modules/
 build/
-src/router/*.ts
-src/resource/*.ts
-src/entity/*.ts
-src/entity/entities/*.ts
+src/db
+logs/**/*.log 
+src/router/**/*.ts
+src/resource/**/*.ts
+src/entity/**/*.ts
 config/
 tmp/
 temp/
