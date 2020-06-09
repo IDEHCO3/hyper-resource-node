@@ -4,7 +4,7 @@
         "schema": "http://schema.org/"
     },
     "@type": "IriTemplate",
-    "template": "http://api.example.com/filter/geom/contains/'{?q}'",
+    "template": "http://api.example.com/filter/geom/contains/%22{?q}%22",
     "variableRepresentation": "hydra:ExplicitRepresentation",
     "mapping": [
       {
