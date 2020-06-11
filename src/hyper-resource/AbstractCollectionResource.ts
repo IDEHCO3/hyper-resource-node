@@ -1,10 +1,13 @@
 import  {Type, ParamTypes,ReturnType, Description, Example } from "./interpreter"
-import {getConnection} from "typeorm"
+import {getConnection, getRepository} from "typeorm"
+
 const connection = getConnection()
 
 import { AbstractResource } from "./AbstractResource";
 
 import { URL } from "url";
+import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA";
+import analyse from "../url-interpreter/interpreter";
 
 export abstract class AbstractCollectionResource extends AbstractResource {
     //constructor(req : any, res : any) { super(req, res) }
@@ -28,6 +31,8 @@ export abstract class AbstractCollectionResource extends AbstractResource {
         const operationNameOrAtributeNames = this.request.params['0'].split('/')[0].trim().toLowerCase()
         
         if (this.hasOperation(operationNameOrAtributeNames)) {
+            // const operation = this.mapNameToOperation()[operationNameOrAtributeNames]
+            // const entities = await operation(this.request.params[0], this.entityClass())
             const entities =  await connection.getRepository(this.entityClass()).find()
             return await this.isJsonRequested() ? this.response.json(entities): this.response.json(entities)
         } else {//Is not a public operation to be called out"
@@ -47,9 +52,15 @@ export abstract class AbstractCollectionResource extends AbstractResource {
     @ReturnType(Array)
     @Description("Returns an list of objects filtered by an expression.")
     @Example("http:\\your-server\api\countries\filter\abbreviation\in\BR,AR,US,ES")
-    filter(expression: string)  : any[] {
-
+    async filter(expression: string, aClass:any):Promise<any[]> {
         return []
+        // let result = analyse(expression, aClass)
+        // let whereExpression = result[0]
+        // let keyValParams = result[1]
+        // const elements = await getRepository(aClass)
+        //                      .createQueryBuilder(aClass.name)
+        //                      .where(whereExpression.trim(), keyValParams).execute()
+        // return elements
     } 
     @ReturnType(Array)
     @Description("List as string separated by comma, where each string is a property name")
