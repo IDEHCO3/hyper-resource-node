@@ -1,5 +1,7 @@
-import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA"
-import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, CONVERTER_TABLE } from "./typeHandlers"
+//import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA"
+import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, CONVERTER_TABLE, COLUMN_TYPES_MAP } from "./typeHandlers"
+import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"
+import { Column, EntityMetadata } from "typeorm"
 
 // const ATTRIBUTES = [ // TODO: replace with real class
 //     "id", "name", "birthDate"
@@ -37,15 +39,16 @@ function isReservedKeyword(wordToCheck) {
     return reservedWord;
 }
 
-function getInputCategory(input, aClass:any) {
+function getInputCategory(input, columns:ColumnMetadata[]) {
     /*
     following the convension that attributes named
     'and', 'or', 'between' or some comparison operators is not valid
 
     this function is a scanner equivalent
     */
+   let attributes:string[] = columns.map((column) => column.propertyName)
    
-    if(Object.keys(aClass.getPropertiesTypes()).includes(input)) {
+    if(attributes.includes(input)) {
         return "attribute"
     } else if (Object.keys(COMPARISON_OPERATOR_MAP).includes(input)) {
         return "comparison_operator"
@@ -60,12 +63,12 @@ function getInputCategory(input, aClass:any) {
     }
 }
 
-function getNextState(currentInput, state, aClass) {
-    let category = getInputCategory(currentInput, aClass)
+function getNextState(currentInput, state, columns:ColumnMetadata[]) {
+    let category = getInputCategory(currentInput, columns)
     return STATE_TABLE[category][state]
 }
 
-function runParser(inputArray, state, aClass) {
+function runParser(inputArray, state, columns:ColumnMetadata[]) {
     let currentInput = inputArray[0]    
 
     if( isReservedKeyword(currentInput) ) {
@@ -82,19 +85,19 @@ function runParser(inputArray, state, aClass) {
         return false
     }
 
-    let nextState = getNextState(currentInput, state, aClass);
+    let nextState = getNextState(currentInput, state, columns);
     if(nextState === null) {
         console.error("SyntaxError: error found next '"+currentInput+"' token")
         return false
     }
     inputArray.splice(0, 1)
-    categoryTable[currentInput] = getInputCategory(currentInput, aClass)
+    categoryTable[currentInput] = getInputCategory(currentInput, columns)
     
     // feed types table
-    return runParser(inputArray, nextState, aClass)    
+    return runParser(inputArray, nextState, columns)    
 }
 
-const translate = (initialSnipetts:string[], aClass:any) => {
+const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
     /* get the initialSnipetts and return a 2 index array with the typeorm expression
     and a keywargs parameters
     */
@@ -109,7 +112,7 @@ const translate = (initialSnipetts:string[], aClass:any) => {
         switch(category) {
             case "attribute":
                 let compOper = initialSnipetts[i+1]
-                whereClause +=  aClass.name + "." + snippet + " " +
+                whereClause +=  metadata.tableName + "." + snippet + " " +
                                 COMPARISON_OPERATOR_MAP[compOper] + " :" + snippet
                 break;
             case "comparison_operator": // already added with the attribute
@@ -132,14 +135,18 @@ const translate = (initialSnipetts:string[], aClass:any) => {
                     lastAttr = initialSnipetts[i-2];
                 }
 
-                let attrTypes = aClass.getPropertiesTypes()[lastAttr]
+                let column:ColumnMetadata = metadata.columns.find((_column) => _column.propertyName === lastAttr)
+
+                // let attrTypes = metadata.columns.map((column) => {
+                //     return column.
+                // })
 
                 // TODO: try to convert to each type in array
-                let attrMainType = attrTypes.filter((type) => {
-                    return type !== "null" && type !== "undefined"
-                })[0]
-
-                let converterFunction = CONVERTER_TABLE[attrMainType]
+                // let attrMainType = attrTypes.filter((type) => {
+                //     return type !== "null" && type !== "undefined"
+                // })[0]
+                
+                let converterFunction = COLUMN_TYPES_MAP[column.type as string]
                 let convertedVal = converterFunction(snippet)
                 keyValParams[lastAttr] = convertedVal
                 //whereClause += " " + COMPARISON_OPERATOR_MAP[snippet] + " ";
@@ -151,18 +158,10 @@ const translate = (initialSnipetts:string[], aClass:any) => {
 }
 
 
-const analyse = (url, aClass:any) => {
-    let propsTypes = aClass.getPropertiesTypes()
+const analyse = (url, entityMetadata) => {   
+    let columns:ColumnMetadata[] = entityMetadata.columns
 
     categoryTable = {}
-    //let foo = getProperty(ist, "nome"); // number
-
-    // type Keys = keyof LimUnidadeFederacaoA;
-    // type NomeType = LimUnidadeFederacaoA["nome"]
-
-    // type PropType<aClass, TProp extends keyof aClass> = aClass[TProp];
-    // type MyPropType = PropType<LimUnidadeFederacaoA, 'sigla'>;
-    // https://stackoverflow.com/questions/45894524/getting-type-of-a-property-of-a-typescript-class-using-keyof-operator
 
     const FILTER_OPERATION_NAME = "filter"
     let snippets = url.split("/")
@@ -173,8 +172,8 @@ const analyse = (url, aClass:any) => {
     }
 
     snippets.splice(0, 1)
-    let res = runParser(snippets, 0, aClass)
-    return translate(initialSnipetts, aClass)
+    let res = runParser(snippets, 0, columns)
+    return translate(initialSnipetts, entityMetadata)
     
 }
 
