@@ -15,3 +15,5 @@ src/context/*/*/*.ts
 config/
 tmp/
 temp/
+src/entity/tsconfig.json
+src/entity/ormconfig.json
