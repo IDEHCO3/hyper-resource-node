@@ -17,4 +17,3 @@ tmp/
 temp/
 src/entity/tsconfig.json
 src/entity/ormconfig.json
-a
