@@ -1,6 +1,6 @@
 // See: http://postgis.net/docs/ST_AsGeoJSON.html
 // See: https://gis.stackexchange.com/questions/112057/sql-query-to-have-a-complete-geojson-feature-from-postgis
-
+// Nas versões mais recentes do postgis
 
 //Feature
 SELECT jsonb_build_object(
@@ -9,6 +9,7 @@ SELECT jsonb_build_object(
     'geometry',   ST_AsGeoJSON(geom)::jsonb,
     'properties', to_jsonb(row) - 'gid' - 'geom'
 ) FROM (SELECT * FROM input_table) row;
+
 
 // FeatureCollection
 SELECT jsonb_build_object(
