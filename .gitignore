@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 node_modules/
+config/
 build/
 src/db
 logs/**/*.log 
@@ -12,8 +13,8 @@ src/entity/entities/*.ts
 src/entity/*/*/*.ts
 src/context/
 src/context/*/*/*.ts
-config/
 tmp/
 temp/
 src/entity/tsconfig.json
 src/entity/ormconfig.json
+a
