@@ -1,6 +1,7 @@
 // See: http://postgis.net/docs/ST_AsGeoJSON.html
 // See: https://gis.stackexchange.com/questions/112057/sql-query-to-have-a-complete-geojson-feature-from-postgis
 
+
 //Feature
 SELECT jsonb_build_object(
     'type',       'Feature',
