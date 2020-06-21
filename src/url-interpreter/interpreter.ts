@@ -1,5 +1,5 @@
 //import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA"
-import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, CONVERTER_TABLE, COLUMN_TYPES_MAP } from "./typeHandlers"
+import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, COLUMN_TYPES_MAP } from "./typeHandlers"
 import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"
 import { Column, EntityMetadata } from "typeorm"
 
@@ -12,18 +12,22 @@ import { Column, EntityMetadata } from "typeorm"
 // ]
 
 const STATE_TABLE = {
-    attribute:           [1,    null,   null,   null,   null,   null,   null],
-    comparison_operator: [null, 2,      null,   null,   null,   null,   null],
-    value:               [null, null,   3,      null,   5,      null,   3], // if a token could be a <value> this path must be unique
-    and:                 [null, null,   null,   0,      null,   6,      null],
-    or:                  [null, null,   null,   0,      null,   null,   null],
-    between:             [null, 4,      null,   null,   null,   null,   null]
+    attribute:           [1,    null,   null,   null,   null,   null,   null,   1,      null],
+    comparison_operator: [null, 2,      null,   null,   null,   null,   null,   null,   null],
+    value:               [null, null,   3,      null,   5,      null,   3,      null,   null], // if a token could be a <value> this path must be unique
+    and:                 [null, null,   null,   0,      null,   6,      null,   null,   0],
+    or:                  [null, null,   null,   0,      null,   null,   null,   null,   0],
+    between:             [null, 4,      null,   null,   null,   null,   null,   null,   null],
+    paren_open:          [7,    null,   null,   null,   null,   null,   null,   null,   null],
+    paren_close:         [null, null,   null,   8,      null,   null,   null,   null,   null]
 }
-const FINAL_STATES = [3]
+const FINAL_STATES = [3, 8]
 
 const AND_OPERATOR = "and"
 const OR_OPERATOR = "or"
 const BETWEEN = "between"
+const OPEN_PAREN = "("
+const CLOSE_PAREN = ")"
 
 let categoryTable = {}
 
@@ -58,6 +62,10 @@ function getInputCategory(input, columns:ColumnMetadata[]) {
         return "or"
     } else if (input === BETWEEN) {
         return "between"
+    } else if (input === OPEN_PAREN) {
+        return "paren_open"
+    } else if (input === CLOSE_PAREN) {
+        return "paren_close"
     } else {
         return "value"
     }
@@ -127,6 +135,12 @@ const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
             case "between":
                 whereClause += " " + COMPARISON_OPERATOR_MAP[snippet] + " ";
                 break;
+            case "paren_open":
+                whereClause += " ( ";
+                break;
+            case "paren_close":
+                whereClause += " ) ";
+                break
             default:
                 let lastAttr = "";
                 if(initialSnipetts[i-3] === "between") {
@@ -136,15 +150,6 @@ const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
                 }
 
                 let column:ColumnMetadata = metadata.columns.find((_column) => _column.propertyName === lastAttr)
-
-                // let attrTypes = metadata.columns.map((column) => {
-                //     return column.
-                // })
-
-                // TODO: try to convert to each type in array
-                // let attrMainType = attrTypes.filter((type) => {
-                //     return type !== "null" && type !== "undefined"
-                // })[0]
                 
                 let converterFunction = COLUMN_TYPES_MAP[column.type as string]
                 let convertedVal = converterFunction(snippet)
@@ -208,5 +213,16 @@ TEST CASES
 
 must return 7 elements
 http://localhost:3002/api/list-lim-unidade-federacao-a/filter/cdInsumo/eq/73/and/idObjeto/gt/18
+
+// 8 registers
+// http://localhost:3002/api/list-lim-unidade-federacao-a/filter/idObjeto/gt/20/or/geocodigo/gt/50/and/cdInsumo/eq/73
+
+// precedence test (both must return 9 registers)
+// http://localhost:3002/api/list-lim-unidade-federacao-a/filter/cdInsumo/eq/73/and/idObjeto/gt/20/or/geocodigo/gt/50
+// http://localhost:3002/api/list-lim-unidade-federacao-a/filter/geocodigo/gt/50/or/cdInsumo/eq/73/and/idObjeto/gt/20
+
+// 7 registers
+// http://localhost:3002/api/list-lim-unidade-federacao-a/filter/(/geocodigo/gt/50/or/cdInsumo/eq/73/)/and/idObjeto/gt/20
+// http://localhost:3002/api/list-lim-unidade-federacao-a/filter/idObjeto/gt/20/and/(/geocodigo/gt/50/or/cdInsumo/eq/73/)
 
 */

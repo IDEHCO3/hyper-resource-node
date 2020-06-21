@@ -22,11 +22,11 @@ export const isNumber = (value:any): value is string => {
     return typeof value==="number"
 }
 
-export const CONVERTER_TABLE = {
-    string: convertToString,
-    number: convertToNumber,
-    boolean: convertToBoolean,
-}
+// export const CONVERTER_TABLE = {
+//     string: convertToString,
+//     number: convertToNumber,
+//     boolean: convertToBoolean,
+// }
 
 export const COMPARISON_OPERATOR_MAP = {
     "eq": "=",

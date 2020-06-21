@@ -64,9 +64,10 @@ export abstract class AbstractCollectionResource extends AbstractResource {
         let result = analyse(expression, metadata)
         let whereExpression = result[0]
         let keyValParams = result[1]
+        // "(lim_unidade_federacao_a.idObjeto > :idObjeto OR lim_unidade_federacao_a.geocodigo > :geocodigo) AND lim_unidade_federacao_a.cdInsumo = :cdInsumo" 
         const elements = await getRepository(entityClass)
                              .createQueryBuilder(metadata.tableName)
-                             .where(whereExpression.trim(), keyValParams).execute()
+                             .where(whereExpression, keyValParams).execute()
         return elements
     } 
     @ReturnType(Array)
