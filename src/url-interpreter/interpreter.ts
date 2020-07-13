@@ -1,7 +1,8 @@
 //import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA"
-import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, COLUMN_TYPES_MAP } from "./typeHandlers"
+import { COMPARISON_OPERATOR_MAP, BOOLEAN_OPERATOR_MAP, COLUMN_TYPES_MAP, JSONLD_BY_COLUMN_TYPES_MAP } from "./typeHandlers"
 import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata"
 import { Column, EntityMetadata } from "typeorm"
+const fetch = require('node-fetch');
 
 // const ATTRIBUTES = [ // TODO: replace with real class
 //     "id", "name", "birthDate"
@@ -11,15 +12,17 @@ import { Column, EntityMetadata } from "typeorm"
 //     "eq", "neq", "gt", "lt", "gte", "lte"
 // ]
 
+// The index is the number of the state (index 0 is state S0)
+//                        0,    1,      2,      3,      4,      5,      6,      7,      8,      9,      10,     11,     12,     13,     14,     15,     16
 const STATE_TABLE = {
-    attribute:           [1,    null,   null,   null,   null,   null,   null,   1,      null],
-    comparison_operator: [null, 2,      null,   null,   null,   null,   null,   null,   null],
-    value:               [null, null,   3,      null,   5,      null,   3,      null,   null], // if a token could be a <value> this path must be unique
-    and:                 [null, null,   null,   0,      null,   6,      null,   null,   0],
-    or:                  [null, null,   null,   0,      null,   null,   null,   null,   0],
-    between:             [null, 4,      null,   null,   null,   null,   null,   null,   null],
-    paren_open:          [7,    null,   null,   null,   null,   null,   null,   null,   null],
-    paren_close:         [null, null,   null,   8,      null,   null,   null,   null,   null]
+    attribute:           [1,    null,   null,   null,   null,   null,   null,   1,      null,   null,   null,   null,   null,   null,   null,   null,   null],
+    comparison_operator: [null, 2,      null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null],
+    value:               [null, null,   3,      null,   5,      null,   3,      null,   null,   10,     null,   null,   null,   14,     null,     16,     null], // if a token could be a <value> this path must be unique
+    and:                 [null, null,   null,   0,      null,   6,      null,   null,   0,      null,   null,   12,     null,   null,   null,   null,   null],
+    or:                  [null, null,   null,   0,      null,   null,   null,   null,   0,      null,   null,   null,   null,   null,   null,   null,   null],
+    between:             [null, 4,      null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null],
+    paren_open:          [7,    null,   15,     null,   9,      null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null,   null],
+    paren_close:         [null, null,   null,   8,      null,   null,   null,   null,   null,   null,   11,     null,   13,     null,   3,      null,   3]
 }
 const FINAL_STATES = [3, 8]
 
@@ -30,6 +33,7 @@ const OPEN_PAREN = "("
 const CLOSE_PAREN = ")"
 
 let categoryTable = {}
+let urlConvertingTable = {}
 
 function isReservedKeyword(wordToCheck) {
     var reservedWord = false;
@@ -105,7 +109,28 @@ function runParser(inputArray, state, columns:ColumnMetadata[]) {
     return runParser(inputArray, nextState, columns)    
 }
 
-const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
+const convertUrlToValue = async (snippet:string, column:ColumnMetadata):Promise<any> => {
+    let url = decodeURIComponent(snippet)
+    var myInit = { method: "options", mode: "cors", cache: "default"};
+    let response = await fetch(url, myInit)
+    let responseOptions = await response.json()
+    let jsonLd = JSONLD_BY_COLUMN_TYPES_MAP[column.type as string]
+    if(jsonLd) {
+        if(jsonLd["@type"] === responseOptions["@type"]) {
+            let getProps = { method: "get", mode: "cors", cache: "default"};
+            let resp = await fetch(url, getProps)
+            let responseGet = await resp.json()
+            return Object.entries(responseGet)[0][1]
+        } else {
+            console.error("'"+ url +"' don't returns a value of the same type of '" + column.propertyName + "'")    
+        }
+    } else {
+        console.error("No JSONLD type for column '" + column.propertyName + "'")
+    }
+
+}
+
+const translate = async (initialSnipetts:string[], metadata:EntityMetadata) => {
     /* get the initialSnipetts and return a 2 index array with the typeorm expression
     and a keywargs parameters
     */
@@ -146,13 +171,20 @@ const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
                 if(initialSnipetts[i-3] === "between") {
                     lastAttr = initialSnipetts[i-4];
                 } else {
-                    lastAttr = initialSnipetts[i-2];
+                    if(categoryTable[initialSnipetts[i-1]] === "paren_open")
+                        lastAttr = initialSnipetts[i-3];
+                    else
+                        lastAttr = initialSnipetts[i-2];
                 }
 
                 let column:ColumnMetadata = metadata.columns.find((_column) => _column.propertyName === lastAttr)
                 
+                if(snippet.startsWith("http%3A%2F%2F") || snippet.startsWith("https%3A%2F%2F"))
+                    snippet = await convertUrlToValue(snippet, column)
+                
                 let converterFunction = COLUMN_TYPES_MAP[column.type as string]
                 let convertedVal = converterFunction(snippet)
+
                 keyValParams[lastAttr] = convertedVal
                 //whereClause += " " + COMPARISON_OPERATOR_MAP[snippet] + " ";
                 break;
@@ -160,18 +192,36 @@ const translate = (initialSnipetts:string[], metadata:EntityMetadata) => {
 
    }
    console.log("Query", whereClause)
+   whereClause = whereClause.replace(/\(\s+\)/, "").trim() // removing empty parenthesis
    return [whereClause, keyValParams]
 }
 
+const processUrl = (url) => {
+    let preProcessedUrl = url
+    let matchedList = url.match(/\/\(\/https?\:\/\/.+\/\)\/?/)
 
-const analyse = (url, entityMetadata) => {   
+    if(!matchedList)
+        return url
+
+    for(let i=0; i<matchedList.length; i++) {
+        let originalUrl = matchedList[i].substring(3, matchedList[i].length-3)
+        let encUri = encodeURIComponent(originalUrl)
+        urlConvertingTable[encUri] = originalUrl
+        preProcessedUrl = url.replace(originalUrl, encUri)
+    }
+    return preProcessedUrl
+}
+
+const analyse = async (url, entityMetadata) => {      
+    let preProcessedUrl = processUrl(url)
     let columns:ColumnMetadata[] = entityMetadata.columns
+    //let geocodeColumn = columns.filter((col) => col.propertyName === "geocodigo")
 
     categoryTable = {}
 
     const FILTER_OPERATION_NAME = "filter"
-    let snippets = url.split("/")
-    let initialSnipetts = url.split("/")
+    let snippets = preProcessedUrl.split("/")
+    let initialSnipetts = preProcessedUrl.split("/")
     if( snippets[0] !== FILTER_OPERATION_NAME) {
         console.error("Error: '" + snippets[0] + "' operation not exists")
         return false
@@ -179,7 +229,7 @@ const analyse = (url, entityMetadata) => {
 
     snippets.splice(0, 1)
     let res = runParser(snippets, 0, columns)
-    return translate(initialSnipetts, entityMetadata)
+    return await translate(initialSnipetts, entityMetadata)
     
 }
 
@@ -225,4 +275,6 @@ http://localhost:3002/api/list-lim-unidade-federacao-a/filter/cdInsumo/eq/73/and
 // http://localhost:3002/api/list-lim-unidade-federacao-a/filter/(/geocodigo/gt/50/or/cdInsumo/eq/73/)/and/idObjeto/gt/20
 // http://localhost:3002/api/list-lim-unidade-federacao-a/filter/idObjeto/gt/20/and/(/geocodigo/gt/50/or/cdInsumo/eq/73/)
 
+\/\(\/https?\:\/\/.+\/\)\/ - regex to get nested url
+http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/https://localhost:3002/api/list-projecao/1/geocodigoUnidadeFederativa/)/
 */
