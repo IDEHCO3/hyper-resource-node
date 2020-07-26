@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const express = require('express')
 const app = express()
 const protocol = process.env.PROTOCOL || 'http'
-const port = process.env.PORT || 3002
+const port = process.env.PORT || 3000
 const protoc_host_baseUrl = protocol + "://" + (process.env.server ||"localhost") + `:${port}`
 const router_entry_point = require('./router/entry_point')
  

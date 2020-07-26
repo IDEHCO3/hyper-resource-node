@@ -6,7 +6,6 @@ const connection = getConnection()
 import { AbstractResource } from "./AbstractResource";
 
 import { URL } from "url";
-import { LimUnidadeFederacaoA } from "../entity/entities/LimUnidadeFederacaoA";
 import analyse from "../url-interpreter/interpreter";
 import { ColumnMetadata } from "typeorm/metadata/ColumnMetadata";
 
