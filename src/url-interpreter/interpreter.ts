@@ -108,24 +108,39 @@ function runParser(inputArray, state, columns:ColumnMetadata[]) {
     // feed types table
     return runParser(inputArray, nextState, columns)    
 }
+const CONTENT_TYPE_HYPER_RESOURCE = "application/hr+json"
+const CONTENT_TYPE_HYPER_RESOURCE_VND = "application/vnd.hr+json"
+
+const isHyperResouceResponse = (response) => {
+    return (response.headers.get('content-type') === CONTENT_TYPE_HYPER_RESOURCE ||
+            response.headers.get('content-type') === CONTENT_TYPE_HYPER_RESOURCE_VND)
+}
 
 const convertUrlToValue = async (snippet:string, column:ColumnMetadata):Promise<any> => {
     let url = decodeURIComponent(snippet)
     var myInit = { method: "options", mode: "cors", cache: "default"};
     let response = await fetch(url, myInit)
     let responseOptions = await response.json()
-    let jsonLd = JSONLD_BY_COLUMN_TYPES_MAP[column.type as string]
-    if(jsonLd) {
-        if(jsonLd["@type"] === responseOptions["@type"]) {
-            let getProps = { method: "get", mode: "cors", cache: "default"};
-            let resp = await fetch(url, getProps)
-            let responseGet = await resp.json()
-            return Object.entries(responseGet)[0][1]
+
+    if(isHyperResouceResponse(response)) {
+        let columnJSONLD = JSONLD_BY_COLUMN_TYPES_MAP[column.type as string]
+        if(columnJSONLD) {
+            if(columnJSONLD["@type"] === responseOptions["@type"]) {
+                let getProps = { method: "get", mode: "cors", cache: "default"};
+                let resp = await fetch(url, getProps)
+                let responseGet = await resp.json()
+                return Object.entries(responseGet)[0][1]
+            } else {
+                console.error("'"+ url +"' don't returns a value of the same type of '" + column.propertyName + "'")    
+            }
         } else {
-            console.error("'"+ url +"' don't returns a value of the same type of '" + column.propertyName + "'")    
+            console.error("No JSONLD type for column '" + column.propertyName + "'")
         }
     } else {
-        console.error("No JSONLD type for column '" + column.propertyName + "'")
+        console.warn("This is not a hyper resource url trying GET request anyway")        
+        let nonHRResp = await fetch(url, { method: "get", mode: "cors", cache: "default"})
+        let nonHRResponseGet = await nonHRResp.json()
+        return Object.entries(nonHRResponseGet)[0][1]
     }
 
 }
@@ -276,5 +291,13 @@ http://localhost:3002/api/list-lim-unidade-federacao-a/filter/cdInsumo/eq/73/and
 // http://localhost:3002/api/list-lim-unidade-federacao-a/filter/idObjeto/gt/20/and/(/geocodigo/gt/50/or/cdInsumo/eq/73/)
 
 \/\(\/https?\:\/\/.+\/\)\/ - regex to get nested url
-http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/https://localhost:3002/api/list-projecao/1/geocodigoUnidadeFederativa/)/
+nested url represents a hyper resource url
+http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/http://localhost:3002/api/list-projecao/1/geocodigoUnidadeFederativa/)/
+nested url doesn't represents hyper resource url
+http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/http://localhost:3003/api/list-pofw/33/gid/)/
+*/
+
+/*
+Rogério Borba
+https://www.youtube.com/watch?v=f0gglwGSCgU
 */
