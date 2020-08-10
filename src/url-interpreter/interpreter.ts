@@ -212,17 +212,18 @@ const translate = async (initialSnipetts:string[], metadata:EntityMetadata) => {
 }
 
 const processUrl = (url) => {
-    let preProcessedUrl = url
-    let matchedList = url.match(/\/\(\/https?\:\/\/.+\/\)\/?/)
+    let urlRmLastSlash = url[url.length-1]!=="/"?url:url.substring(0, url.length-1)
+    let preProcessedUrl = urlRmLastSlash
+    let matchedList = urlRmLastSlash.match(/\/\(\/https?\:\/\/.+\/\)\/?/)
 
     if(!matchedList)
-        return url
+        return urlRmLastSlash
 
     for(let i=0; i<matchedList.length; i++) {
         let originalUrl = matchedList[i].substring(3, matchedList[i].length-3)
         let encUri = encodeURIComponent(originalUrl)
         urlConvertingTable[encUri] = originalUrl
-        preProcessedUrl = url.replace(originalUrl, encUri)
+        preProcessedUrl = urlRmLastSlash.replace(originalUrl, encUri)
     }
     return preProcessedUrl
 }
@@ -295,9 +296,4 @@ nested url represents a hyper resource url
 http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/http://localhost:3002/api/list-projecao/1/geocodigoUnidadeFederativa/)/
 nested url doesn't represents hyper resource url
 http://localhost:3001/api/list-lim-unidade-federacao-a/filter/geocodigo/eq/(/http://localhost:3003/api/list-pofw/33/gid/)/
-*/
-
-/*
-Rogério Borba
-https://www.youtube.com/watch?v=f0gglwGSCgU
 */
